@@ -1,0 +1,135 @@
+<script>
+(function($) {
+    $(document).on('jet-smart-filters/inited', function() {
+        const brandValues = {
+            "Audemars Piguet": "222",
+            "breguet": "228",
+            "Breitling": "209",
+            "Bulova": "202",
+            "Cartier": "184",
+            "CPCP Collection Privee": "223",
+            "Hermes": "224",
+            "HEUER": "178",
+            "IWC/International watch co": "199",
+            "Jaeger-Lecoultre": "200",
+            "Longines": "207",
+            "Must de Cartier": "214",
+            "Omega": "193",
+            "Other Brand": "201",
+            "otherbrand": "5093",
+            "Patek Philippe": "210",
+            "Piaget": "221",
+            "Rolex / Tudor": "203",
+            "Seiko": "225",
+            "Tissot": "226",
+            "Universal Geneve": "213",
+            "Vacheron Constantin": "227",
+            "zenith": "211"
+        };
+
+        const brandCategories = {
+            "Audemars Piguet": [],
+            "breguet": [],
+            "Breitling": [],
+            "Bulova": [],
+            "Cartier": ["CPCP Collection Privee", "Must de Cartier"],
+            "Hermes": [],
+            "HEUER": [],
+            "IWC/International watch co": [],
+            "Jaeger-Lecoultre": [],
+            "Longines": [],
+            "Omega": [],
+            "Other Brand": ["otherbrand"],
+            "Patek Philippe": [],
+            "Piaget": [],
+            "Rolex / Tudor": [],
+            "Seiko": [],
+            "Tissot": [],
+            "Universal Geneve": [],
+            "Vacheron Constantin": [],
+            "zenith": []
+        };
+
+        const localStorageKey = 'selectedBrand'; // Key for local storage
+
+        function createOption(brandName, level = 0) {
+            const value = brandName === "Select..." ? "" : (brandValues[brandName] || brandName.toLowerCase());
+            const optionElement = $('<option>').val(value)
+                                               .text(level > 0 ? "    " + brandName : brandName)
+                                               .attr('data-label', brandName)
+                                               .attr('data-counter-prefix', "")
+                                               .attr('data-counter-suffix', "")
+                                               .attr('data-level', level); // Add data-level attribute
+
+            return optionElement;
+        }
+
+        function rebuildOptions(selectedValue) {
+            const $select = $('.jet-select__control');
+
+            if ($select.data('select2')) {
+                $select.select2('destroy');
+            }
+
+            $select.empty(); // Clear all options
+
+            $('<option>').val("").text("Select...").attr('data-label', "Select...").attr('data-counter-prefix', "").attr('data-counter-suffix', "").appendTo($select);
+
+            Object.keys(brandCategories).sort().forEach(parent => {
+                $('<option>').val(brandValues[parent]).text(parent).attr('data-label', parent).attr('data-counter-prefix', "").attr('data-counter-suffix', "").appendTo($select);
+
+                brandCategories[parent].forEach(child => {
+                    createOption(child, 1).appendTo($select);
+                });
+            });
+
+            $select.val(selectedValue);
+
+            $select.select2({
+                placeholder: 'Search...',
+                width: '100%',
+                allowClear: true,
+                templateResult: function(option) {
+                    // Use the data-level attribute to add the 'childlist' class to child categories
+                    if ($(option.element).data('level') > 0) {
+                        return $('<span>').addClass('childlist').text(option.text);
+                    } else {
+                        return option.text;
+                    }
+                }
+            }).on('change', function() {
+                localStorage.setItem(localStorageKey, $(this).val());
+            }).trigger('change');
+        }
+
+        rebuildOptions(localStorage.getItem(localStorageKey));
+
+        $('.select2-search__field').on('input', function() {
+            var value = $(this).val();
+            var converted = value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+            $(this).val(converted);
+        });
+
+        $('.jet-select__control').one('select2:open', function() {
+            $('.select2-search__field').attr('placeholder', '候補を検索できます');
+            if ($(this).closest('#Disable_Multibyte').length) {
+                $('.select2-search__field').attr('placeholder', '半角英数字で候補を検索できます');
+            }
+        });
+    });
+})(jQuery);
+</script>
+
+
+<style type="text/css">
+<!--
+
+.childlist::before {
+    content:" - "
+}
+
+
+-->
+</style>
